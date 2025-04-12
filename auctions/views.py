@@ -1,24 +1,35 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
+from django.db.models import Q
+
 from .models import Category, Auction, Bid
 from .serializers import (
     CategoryListCreateSerializer, CategoryDetailSerializer,
     AuctionListCreateSerializer, AuctionDetailSerializer,
     BidListCreateSerializer, BidDetailSerializer
 )
-from django.db.models import Q
-from rest_framework.exceptions import ValidationError
-
+from .permissions import IsOwnerOrAdmin
 
 # --- Categorías ---
 class CategoryListCreate(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryListCreateSerializer
 
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
+
 class CategoryRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryDetailSerializer
+    permission_classes = [permissions.IsAdminUser]
 
+    
 # --- Subastas ---
 class AuctionListCreate(generics.ListCreateAPIView):
     serializer_class = AuctionListCreateSerializer
@@ -73,6 +84,7 @@ class AuctionListCreate(generics.ListCreateAPIView):
 
 
 class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsOwnerOrAdmin] 
     queryset = Auction.objects.all()
     serializer_class = AuctionDetailSerializer
 
@@ -93,3 +105,12 @@ class BidRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         self.auction = get_object_or_404(Auction, pk=self.kwargs["auction_id"])
         return Bid.objects.filter(auction=self.auction)
+
+class UserAuctionListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        # Obtener las subastas del usuario autenticado
+        user_auctions = Auction.objects.filter(auctioneer=request.user)
+        serializer = AuctionListCreateSerializer(user_auctions, many=True)
+        return Response(serializer.data)
