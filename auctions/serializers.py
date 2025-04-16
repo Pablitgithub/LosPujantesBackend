@@ -64,10 +64,13 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
 
 class BidListCreateSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
+    bidder_username = serializers.CharField(source="bidder.username", read_only=True)
 
     class Meta:
         model = Bid
         fields = '__all__'
+        read_only_fields = ('auction', 'bidder')
+
 
 
 class BidDetailSerializer(serializers.ModelSerializer):

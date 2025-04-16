@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import Category, Auction, Bid
 from .serializers import (
@@ -12,7 +13,7 @@ from .serializers import (
     AuctionListCreateSerializer, AuctionDetailSerializer,
     BidListCreateSerializer, BidDetailSerializer
 )
-from .permissions import IsOwnerOrAdmin
+from .permissions import IsOwnerOrAdmin  
 
 # --- Categorías ---
 class CategoryListCreate(generics.ListCreateAPIView):
@@ -91,20 +92,63 @@ class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 # --- Pujas (Bids) ---
 class BidListCreate(generics.ListCreateAPIView):
     serializer_class = BidListCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_auction(self):
+        return get_object_or_404(Auction, pk=self.kwargs["auction_id"])
 
     def get_queryset(self):
-        self.auction = get_object_or_404(Auction, pk=self.kwargs["auction_id"])
-        return Bid.objects.filter(auction=self.auction)
+        auction = self.get_auction()
+        return Bid.objects.filter(auction=auction).order_by('-price')
 
     def perform_create(self, serializer):
-        serializer.save(auction=self.auction)
+        auction = self.get_auction()
+
+        # Validación de subasta abierta
+        if auction.closing_date <= timezone.now():
+            raise ValidationError("No se puede pujar. La subasta ya ha cerrado.")
+
+        # Validación de precio mayor a la puja anterior
+        last_bid = Bid.objects.filter(auction=auction).order_by('-price').first()
+        new_price = serializer.validated_data.get('price')
+        if new_price <= 0:
+            raise ValidationError("La puja debe ser un número positivo.")
+
+        if last_bid and new_price <= last_bid.price:
+            raise ValidationError(f"La puja debe ser mayor que la actual: {last_bid.price}€.")
+
+        # Guardar la puja
+        serializer.save(auction=auction, bidder=self.request.user)
 
 class BidRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BidDetailSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         self.auction = get_object_or_404(Auction, pk=self.kwargs["auction_id"])
-        return Bid.objects.filter(auction=self.auction)
+        return Bid.objects.filter(auction=self.auction, bidder=self.request.user)
+
+    def perform_update(self, serializer):
+        # Solo permitir editar si la subasta sigue abierta
+        if self.auction.closing_date <= timezone.now():
+            raise ValidationError("No puedes editar la puja. La subasta ya ha cerrado.")
+
+        last_bid = Bid.objects.filter(auction=self.auction).exclude(pk=self.get_object().pk).order_by('-price').first()
+        new_price = serializer.validated_data.get('price')
+
+        if new_price <= 0:
+            raise ValidationError("La puja debe ser un número positivo.")
+
+        if last_bid and new_price <= last_bid.price:
+            raise ValidationError(f"La puja debe ser mayor que la actual: {last_bid.price}€.")
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.auction.closing_date <= timezone.now():
+            raise ValidationError("No puedes eliminar la puja. La subasta ya ha cerrado.")
+        instance.delete()
+
 
 class UserAuctionListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -113,4 +157,12 @@ class UserAuctionListView(APIView):
         # Obtener las subastas del usuario autenticado
         user_auctions = Auction.objects.filter(auctioneer=request.user)
         serializer = AuctionListCreateSerializer(user_auctions, many=True)
+        return Response(serializer.data)
+    
+class UserBidListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_bids = Bid.objects.filter(bidder=request.user).order_by('-price')
+        serializer = BidListCreateSerializer(user_bids, many=True)
         return Response(serializer.data)
