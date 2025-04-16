@@ -32,7 +32,6 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '@dpg-cvrbaqmr433s73b7p0eg-a.oregon-postgres.render.com', 'lospujantesbackend-1.onrender.com']
 
-
 # Application definition
 
 INSTALLED_APPS = [
