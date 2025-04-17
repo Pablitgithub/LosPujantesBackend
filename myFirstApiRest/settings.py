@@ -40,8 +40,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '0.0.0.0',
     'lospujantesbackend-l89k.onrender.com',  # Aquí va el nombre correcto de tu dominio en Render
-    'dpg-cvrbaqmr433s73b7p0eg-a.oregon-postgres.render.com',  # Si necesitas acceder a PostgreSQL desde tu aplicación
-    'dpg-d00ihmidbo4c7393gn00-a.oregon-postgres.render.com'  # Otro caso similar si lo necesitas
+    '@dpg-cvrbaqmr433s73b7p0eg-a.oregon-postgres.render.com',  # Si necesitas acceder a PostgreSQL desde tu aplicación
+    '@dpg-d00ihmidbo4c7393gn00-a.oregon-postgres.render.com'  # Otro caso similar si lo necesitas
 ]
 
 # Application definition
