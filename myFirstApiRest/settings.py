@@ -34,7 +34,15 @@ SECRET_KEY = 'django-insecure-37iw6&pju-s1#r1$k(f&=6kd@h+^^j-^c8^34d#2f7tnv*o)^e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '@dpg-cvrbaqmr433s73b7p0eg-a.oregon-postgres.render.com', 'lospujantesbackend-1.onrender.com', "@dpg-d00ihmidbo4c7393gn00-a.oregon-postgres.render.com"]
+#ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '@dpg-cvrbaqmr433s73b7p0eg-a.oregon-postgres.render.com', 'lospujantesbackend-1.onrender.com', "@dpg-d00ihmidbo4c7393gn00-a.oregon-postgres.render.com"]
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    'lospujantesbackend-l89k.onrender.com',  # Aquí va el nombre correcto de tu dominio en Render
+    'dpg-cvrbaqmr433s73b7p0eg-a.oregon-postgres.render.com',  # Si necesitas acceder a PostgreSQL desde tu aplicación
+    'dpg-d00ihmidbo4c7393gn00-a.oregon-postgres.render.com'  # Otro caso similar si lo necesitas
+]
 
 # Application definition
 
