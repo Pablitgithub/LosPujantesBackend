@@ -1,0 +1,6 @@
+*.pyc
+__pycache__/
+djangoServer/
+myFirstServer/
+.env
+db.sqlite3
