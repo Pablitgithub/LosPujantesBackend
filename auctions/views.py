@@ -7,11 +7,11 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Category, Auction, Bid
+from .models import Category, Auction, Bid, Rating
 from .serializers import (
     CategoryListCreateSerializer, CategoryDetailSerializer,
     AuctionListCreateSerializer, AuctionDetailSerializer,
-    BidListCreateSerializer, BidDetailSerializer
+    BidListCreateSerializer, BidDetailSerializer, RatingSerializer
 )
 from .permissions import IsOwnerOrAdmin  
 
@@ -166,3 +166,32 @@ class UserBidListView(APIView):
         user_bids = Bid.objects.filter(bidder=request.user).order_by('-price')
         serializer = BidListCreateSerializer(user_bids, many=True)
         return Response(serializer.data)
+
+class RatingListCreate(generics.ListCreateAPIView):
+    """
+    GET  /api/ratings/?auction=<id>  → lista el rating del usuario para esa subasta (o vacío)
+    POST /api/ratings/               → crea un rating (user se añade en perform_create)
+    """
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Rating.objects.filter(user=self.request.user)
+        auction_id = self.request.query_params.get('auction')
+        if auction_id:
+            qs = qs.filter(auction_id=auction_id)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class RatingRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET/PUT/DELETE  /api/ratings/<pk>/  → operaciones sobre el rating propio
+    """
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Rating.objects.filter(user=self.request.user)

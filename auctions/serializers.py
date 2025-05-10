@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Category, Auction, Bid
+from .models import Category, Auction, Bid, Rating
 from drf_spectacular.utils import extend_schema_field
 from datetime import timedelta
+from django.db.models import Avg
 
 
 class CategoryListCreateSerializer(serializers.ModelSerializer):
@@ -19,6 +20,7 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ",read_only=True)
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True)
+    average_rating = serializers.SerializerMethodField(read_only=True)
 
     def validate_closing_date(self, value):
         if value <= timezone.now():
@@ -42,6 +44,7 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ",read_only=True)
     closing_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ")
     isOpen = serializers.SerializerMethodField(read_only=True)
+    average_rating = serializers.SerializerMethodField(read_only=True)
 
     def validate_closing_date(self, value):
         if value <= timezone.now():
@@ -52,15 +55,19 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La subasta debe tener una duración mínima de 15 días.")
         
         return value
-    
-    class Meta:
-        model = Auction
-        fields = '__all__'
 
     @extend_schema_field(serializers.BooleanField()) 
     def get_isOpen(self, obj):
         return obj.closing_date > timezone.now()
     
+    @extend_schema_field(serializers.FloatField())
+    def get_average_rating(self, obj):
+        avg = obj.ratings.aggregate(avg=Avg('value'))['avg'] or 0
+        return round(avg, 2)
+    
+    class Meta:
+        model = Auction
+        fields = '__all__'
 
 class BidListCreateSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
@@ -79,3 +86,9 @@ class BidDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bid
         fields = '__all__'
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = ['id', 'auction', 'user', 'value']
+        read_only_fields = ['user']
