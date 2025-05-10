@@ -62,8 +62,8 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
     
     @extend_schema_field(serializers.FloatField())
     def get_average_rating(self, obj):
-        avg = obj.ratings.aggregate(avg=Avg('value'))['avg'] or 0
-        return round(avg, 2)
+        avg = obj.ratings.aggregate(avg=Avg('value'))['avg']
+        return round(avg if avg is not None else 1, 2)
     
     class Meta:
         model = Auction
