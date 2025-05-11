@@ -7,11 +7,11 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Category, Auction, Bid, Rating
+from .models import Category, Auction, Bid, Rating, Comment
 from .serializers import (
     CategoryListCreateSerializer, CategoryDetailSerializer,
     AuctionListCreateSerializer, AuctionDetailSerializer,
-    BidListCreateSerializer, BidDetailSerializer, RatingSerializer
+    BidListCreateSerializer, BidDetailSerializer, RatingSerializer, CommentSerializer
 )
 from .permissions import IsOwnerOrAdmin  
 
@@ -196,3 +196,25 @@ class RatingRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Rating.objects.filter(user=self.request.user)
+    
+class CommentListCreate(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        # Listado de comentarios de una subasta concreta
+        auction = get_object_or_404(Auction, pk=self.kwargs['auction_id'])
+        return Comment.objects.filter(auction=auction)
+
+    def perform_create(self, serializer):
+        auction = get_object_or_404(Auction, pk=self.kwargs['auction_id'])
+        serializer.save(user=self.request.user, auction=auction)
+
+
+class CommentRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        auction = get_object_or_404(Auction, pk=self.kwargs['auction_id'])
+        return Comment.objects.filter(auction=auction)
