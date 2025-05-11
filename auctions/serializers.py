@@ -38,7 +38,16 @@ class AuctionListCreateSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.BooleanField()) 
     def get_isOpen(self, obj):
-        return obj.closing_date > timezone.now()    
+        return obj.closing_date > timezone.now()   
+
+    @extend_schema_field(serializers.FloatField())
+    def get_average_rating(self, obj):
+        avg = obj.ratings.aggregate(avg=Avg('value'))['avg'] or 0
+        return round(avg, 2)
+    
+    class Meta:
+        model = Auction
+        fields = '__all__' 
         
 class AuctionDetailSerializer(serializers.ModelSerializer):
     creation_date = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ",read_only=True)
@@ -62,8 +71,8 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
     
     @extend_schema_field(serializers.FloatField())
     def get_average_rating(self, obj):
-        avg = obj.ratings.aggregate(avg=Avg('value'))['avg']
-        return round(avg if avg is not None else 1, 2)
+        avg = obj.ratings.aggregate(avg=Avg('value'))['avg'] or 0
+        return round(avg, 2)
     
     class Meta:
         model = Auction

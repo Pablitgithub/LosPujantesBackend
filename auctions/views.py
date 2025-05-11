@@ -33,6 +33,7 @@ class CategoryRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     
 # --- Subastas ---
 class AuctionListCreate(generics.ListCreateAPIView):
+    queryset = Auction.objects.all()
     serializer_class = AuctionListCreateSerializer
 
     def get_queryset(self):
