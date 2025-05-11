@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
@@ -93,7 +93,11 @@ class AuctionRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 # --- Pujas (Bids) ---
 class BidListCreate(generics.ListCreateAPIView):
     serializer_class = BidListCreateSerializer
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:      # GET, HEAD, OPTIONS
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_auction(self):
         return get_object_or_404(Auction, pk=self.kwargs["auction_id"])
