@@ -202,7 +202,6 @@ class CommentListCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        # Listado de comentarios de una subasta concreta
         auction = get_object_or_404(Auction, pk=self.kwargs['auction_id'])
         return Comment.objects.filter(auction=auction)
 

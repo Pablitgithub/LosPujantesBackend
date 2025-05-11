@@ -104,10 +104,10 @@ class RatingSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
-    created = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
-    updated = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%SZ", read_only=True)
+    created       = serializers.DateTimeField(read_only=True)
+    updated       = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Comment
-        fields = ['id', 'auction', 'user', 'user_username', 'title', 'body', 'created', 'updated']
-        read_only_fields = ['user', 'auction']
+        fields = ['id','auction','user','user_username','title','body','created','updated']
+        read_only_fields = ['user','auction']
